@@ -211,9 +211,16 @@ Module.register('MMM-MyCommute', {
   },
 
   buildRequestBody: function(dest) {
+    var modeMap = {
+      'driving': 'DRIVE',
+      'walking': 'WALK',
+      'bicycling': 'BICYCLE',
+      'transit': 'TRANSIT'
+    };
+
     var mode = 'DRIVE';
-    if (dest.mode && this.travelModes.indexOf(dest.mode) != -1) {
-      mode = dest.mode.toUpperCase();
+    if (dest.mode && modeMap[dest.mode]) {
+      mode = modeMap[dest.mode];
     }
 
     var now = new Date();
@@ -371,22 +378,6 @@ Module.register('MMM-MyCommute', {
         var r = p.routes[0];
 
         row.appendChild( this.formatTime(r.time, r.timeInTraffic) );
-
-        //summary?
-        if (this.config.showSummary) {
-          var summary = document.createElement("div");
-            summary.classList.add("route-summary");
-
-          if (r.transitInfo) {
-
-            symbolIcon = this.getTransitIcon(p.config,r);
-            this.buildTransitSummary(r.transitInfo, summary); 
-
-          } else {
-            summary.innerHTML = r.summary;
-          }
-          row.appendChild(summary);
-        }
 
 
       } else {
