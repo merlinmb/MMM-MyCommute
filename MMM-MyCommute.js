@@ -223,15 +223,16 @@ Module.register('MMM-MyCommute', {
       mode = modeMap[dest.mode];
     }
 
-    var now = new Date();
-    var future = new Date(now.getTime() + 5000);
+    // Use current UTC time for live traffic conditions
+    var departureTime = new Date().toISOString();
 
     var body = {
       origin: { address: this.config.origin },
       destination: { address: dest.destination },
       travelMode: mode,
-      routingPreference: 'TRAFFIC_AWARE',
-      departureTime: future.toISOString()
+      routingPreference: 'TRAFFIC_AWARE_OPTIMAL',
+      trafficModel: 'BEST_GUESS',
+      departureTime: departureTime
     };
 
     if (dest.transitMode) {

@@ -35,11 +35,17 @@ module.exports = NodeHelper.create({
     var predictions = new Array();
 
 		payload.destinations.forEach(function(dest, index) {
+      // Log the request being sent
+      console.log("MMM-MyCommute: Sending request for " + dest.config.label);
+      console.log("  Departure time: " + dest.body.departureTime);
+      console.log("  Travel mode: " + dest.body.travelMode);
+      console.log("  Routing preference: " + dest.body.routingPreference);
+
 			axios.post('https://routes.googleapis.com/directions/v2:computeRoutes', dest.body, {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': payload.apikey,
-          'X-Goog-FieldMask': 'routes.duration'
+          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters'
         }
       }).then(function(response) {
 
