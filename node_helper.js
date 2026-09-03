@@ -66,6 +66,20 @@ module.exports = NodeHelper.create({
 
             routeList.push(routeObj);
           }
+
+          // Log all routes returned
+          console.log("MMM-MyCommute: " + dest.config.label + " - Found " + routeList.length + " routes:");
+          routeList.forEach(function(route, idx) {
+            console.log("  Route " + (idx + 1) + ": " + route.time + " seconds (" + Math.round(route.time / 60) + " min)");
+          });
+
+          // Sort by duration (fastest first)
+          routeList.sort(function(a, b) {
+            return a.time - b.time;
+          });
+
+          console.log("MMM-MyCommute: Fastest route for " + dest.config.label + " is " + Math.round(routeList[0].time / 60) + " min");
+
           prediction.routes = routeList;
 
         } else {

@@ -2,17 +2,21 @@
   position: relative;
   padding: 1px;
   border-bottom: solid 1px #222;
-  min-height: 35px;
+  min-height: 40px;
   min-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .MMM-MyCommute .transit-mode {
   width: 24px;
   text-align: center;
-  position: absolute;
-  top: 6px;
-  left: 0px;
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: center;
+  order: 0;
+  margin-right: 8px;
 }
 
 .MMM-MyCommute .transit-mode .transit-mode-icon {
@@ -25,15 +29,17 @@
 .MMM-MyCommute .destination-label {
   display: block;
   margin-left: 30px;
-  margin-right: 60px;
+  margin-right: 0px;
   font-size: 20px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 25px;
-  margin-top: 4px;
-  margin-bottom: 6px;
+  margin-top: 0px;
+  margin-bottom: 0px;
   text-align: left;
+  flex: 1;
+  order: 1;
 }
 
 .MMM-MyCommute .row.with-multiple-routes .destination-label {
@@ -48,11 +54,10 @@
   font-weight: 400;
   display: block;
   white-space: nowrap;
-  position: absolute;
-  top: 6px;
-  right: 0px;
+  position: relative;
+  order: 2;
+  margin-left: 20px;
   line-height: 25px;
-  margin-top: 4px;
 }
 
 .MMM-MyCommute .route-error {
