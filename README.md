@@ -1,16 +1,24 @@
 # MMM-MyCommute
 This a module for the [MagicMirror](https://github.com/MichMich/MagicMirror/tree/develop).
 
-It shows your commute time using Google's Traffic API (requires an API Key from Google).
+It shows your commute time using Google's Routes API (requires an API Key from Google).
 
-It is a fork of `mrx-work-traffic` by Dominic Marx.
-https://github.com/domsen123/mrx-work-traffic
+This is a fork of MMM-MyCommute by jclarke0000 (https://github.com/jclarke0000/MMM-MyCommute), which itself is a fork of `mrx-work-traffic` by Dominic Marx (https://github.com/domsen123/mrx-work-traffic).
+
+## Notable Changes in This Fork
+
+This fork updates the module to use the **Google Routes API v2** instead of the deprecated Google Maps Directions API. Key changes include:
+
+- Replaced `request` package with `axios` for HTTP requests
+- Updated to use Google Routes API v2 (`routes.googleapis.com/directions/v2:computeRoutes`)
+- Improved request/response handling with proper error management
+- Added support for routing preferences and better traffic awareness
 
 ![Screen Shot](/../screenshots/MMM-MyCommute-screenshot.png?raw=true "Screen Shot")
 
 # Installation
 1. Navigate into your MagicMirror `modules` folder and execute<br>
-`git clone https://github.com/jclarke0000/MMM-MyCommute.git`.
+`git clone https://github.com/merlinmb/MMM-MyCommute.git`.
 2. Enter the `MMM-MyCommute` directory and execute `npm install`.
 3. Go to https://developers.google.com/maps/documentation/javascript/get-api-key and get an API key.
 
@@ -216,7 +224,7 @@ Here is an example of an entry in `config.js`
 
 ## Dependencies
 Installed during installation
-- [request](https://www.npmjs.com/package/request)
+- [axios](https://www.npmjs.com/package/axios)
 - [moment](https://www.npmjs.com/package/moment)
 
 ## Special Thanks

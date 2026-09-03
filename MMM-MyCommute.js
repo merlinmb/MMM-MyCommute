@@ -174,7 +174,7 @@ Module.register('MMM-MyCommute', {
 
     //only poll if in window
     if ( this.isInWindow( this.config.startTime, this.config.endTime, this.config.hideDays ) ) {
-      //build URLs
+      //build requests
       var destinations = new Array();
       for(var i = 0; i < this.config.destinations.length; i++) {
 
@@ -185,16 +185,16 @@ Module.register('MMM-MyCommute', {
         var destHideDays = d.hideDays || [];
 
         if ( this.isInWindow( destStartTime, destEndTime, destHideDays ) ) {
-          var url = 'https://maps.googleapis.com/maps/api/directions/json' + this.getParams(d);
-          destinations.push({ url:url, config: d});
-          console.log(url);          
+          var body = this.buildRequestBody(d);
+          destinations.push({ body: body, config: d});
+          console.log("Request for " + d.label + ": " + JSON.stringify(body));
         }
 
       }
       this.inWindow = true;
 
-      if (destinations.length > 0) {        
-        this.sendSocketNotification("GOOGLE_TRAFFIC_GET", {destinations: destinations, instanceId: this.identifier});
+      if (destinations.length > 0) {
+        this.sendSocketNotification("GOOGLE_TRAFFIC_GET", {destinations: destinations, instanceId: this.identifier, apikey: this.config.apikey});
       } else {
         this.hide(1000, {lockString: this.identifier});
         this.inWindow = false;
@@ -210,64 +210,37 @@ Module.register('MMM-MyCommute', {
 
   },
 
-  getParams: function(dest) {
-
-    var params = '?';
-    params += 'origin=' + encodeURIComponent(this.config.origin);
-    params += '&destination=' + encodeURIComponent(dest.destination);
-    params += '&key=' + this.config.apikey;
-
-    //travel mode
-    var mode = 'driving';
+  buildRequestBody: function(dest) {
+    var mode = 'DRIVE';
     if (dest.mode && this.travelModes.indexOf(dest.mode) != -1) {
-      mode = dest.mode;
-    } 
-    params += '&mode=' + mode;
+      mode = dest.mode.toUpperCase();
+    }
 
-    //transit mode if travelMode = 'transit'
-    if (mode == 'transit' && dest.transitMode) {
+    var now = new Date();
+    var future = new Date(now.getTime() + 5000);
+
+    var body = {
+      origin: { address: this.config.origin },
+      destination: { address: dest.destination },
+      travelMode: mode,
+      routingPreference: 'TRAFFIC_AWARE',
+      departureTime: future.toISOString()
+    };
+
+    if (dest.transitMode) {
       var tModes = dest.transitMode.split("|");
-      var sanitizedTransitModes = '';
+      var sanitizedTransitModes = [];
       for (var i = 0; i < tModes.length; i++) {
         if (this.transitModes.indexOf(tModes[i]) != -1) {
-          sanitizedTransitModes += (sanitizedTransitModes == '' ? tModes[i] : "|" + tModes[i]);
+          sanitizedTransitModes.push(tModes[i].toUpperCase());
         }
       }
       if (sanitizedTransitModes.length > 0) {
-        params += '&transit_mode=' + sanitizedTransitModes;
+        body.transitPreferences = { allowedModes: sanitizedTransitModes };
       }
-    } 
-    if (dest.alternatives == true) {
-      params += '&alternatives=true';
     }
 
-    if (dest.waypoints) {
-      var waypoints = dest.waypoints.split("|");
-      for (var i = 0; i < waypoints.length; i++) {
-        waypoints[i] = "via:" + encodeURIComponent(waypoints[i]);
-      }
-      params += '&waypoints=' + waypoints.join("|");
-    } 
-
-    //avoid
-    if (dest.avoid) {
-      var a = dest.avoid.split("|");
-      var sanitizedAvoidOptions = '';
-      for (var i = 0; i < a.length; i++) {
-        if (this.avoidOptions.indexOf(a[i]) != -1) {
-          sanitizedAvoidOptions += (sanitizedAvoidOptions == '' ? a[i] : "|" + a[i]);
-        }
-      }
-      if (sanitizedAvoidOptions.length > 0) {
-        params += '&avoid=' + sanitizedAvoidOptions;
-      }
-
-    }
-
-    params += '&departure_time=now'; //needed for time based on traffic conditions
-
-    return params;
-
+    return body;
   },  
 
   svgIconFactory: function(glyph) {

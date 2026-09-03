@@ -6,7 +6,7 @@
  */
 
 var NodeHelper = require("node_helper");
-var request = require('request');
+var axios = require('axios');
 var moment = require('moment');
  
 module.exports = NodeHelper.create({
@@ -35,72 +35,80 @@ module.exports = NodeHelper.create({
     var predictions = new Array();
 
 		payload.destinations.forEach(function(dest, index) {
-			request({url: dest.url, method: 'GET'}, function(error, response, body) {
-				
+			axios.post('https://routes.googleapis.com/directions/v2:computeRoutes', dest.body, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': payload.apikey,
+          'X-Goog-FieldMask': 'routes.duration'
+        }
+      }).then(function(response) {
+
         var prediction = new Object({
           config: dest.config
         });
 
-        if(!error && response.statusCode == 200){
+        var data = response.data;
 
-          var data = JSON.parse(body);
+        if (data.error) {
+          console.log("MMM-MyCommute: " + JSON.stringify(data.error));
+          prediction.error = true;
+        } else if (data.routes && data.routes.length > 0) {
 
+          var routeList = new Array();
+          for (var i = 0; i < data.routes.length; i++) {
+            var r = data.routes[i];
+            var duration = self.parseDuration(r.duration);
 
-          if (data.error_message) {
-            console.log("MMM-MyCommute: " + data.error_message);
-            prediction.error = true;
-          } else {
-  
-            var routeList = new Array();
-            for (var i = 0; i < data.routes.length; i++) {
-              var r = data.routes[i];
-              var routeObj = new Object({
-                summary: r.summary,
-                time: r.legs[0].duration.value
-              });
+            var routeObj = new Object({
+              summary: 'Route ' + (i + 1),
+              time: duration
+            });
 
-              if (r.legs[0].duration_in_traffic) {
-                routeObj.timeInTraffic = r.legs[0].duration_in_traffic.value;
-              }
-              if (dest.config.mode && dest.config.mode == 'transit') {
-                var transitInfo = new Array();
-                var gotFirstTransitLeg = false;
-                for (var j = 0; j < r.legs[0].steps.length; j++) {
-                  var s = r.legs[0].steps[j];
-
-                  if (s.transit_details) {
-                    var arrivalTime = '';
-                    if (!gotFirstTransitLeg && dest.config.showNextVehicleDeparture) {
-                      gotFirstTransitLeg = true;
-                      // arrivalTime = ' <span class="transit-arrival-time">(next at ' + s.transit_details.departure_time.text + ')</span>';
-                      arrivalTime = moment(s.transit_details.departure_time.value * 1000);
-                    }
-                    transitInfo.push({routeLabel: s.transit_details.line.short_name ? s.transit_details.line.short_name : s.transit_details.line.name, vehicle: s.transit_details.line.vehicle.type, arrivalTime: arrivalTime});
-                  }
-                  routeObj.transitInfo = transitInfo;
-                }
-              }
-              routeList.push(routeObj);
-            }
-            prediction.routes = routeList;
-            
+            routeList.push(routeObj);
           }
+          prediction.routes = routeList;
 
         } else {
-          console.log( "Error getting traffic prediction: " + response.statusCode );
           prediction.error = true;
-
         }
 
         predictions[index] = prediction;
         returned++;
 
-        if (returned == payload.destinations.length) {          
+        if (returned == payload.destinations.length) {
           self.sendSocketNotification('GOOGLE_TRAFFIC_RESPONSE' + payload.instanceId, predictions);
         };
 
+      }).catch(function(error) {
+        var msg = "Error getting traffic prediction: " + error.message;
+        if (error.response && error.response.data) {
+          msg += " - " + JSON.stringify(error.response.data);
+        }
+        console.log(msg);
+        var prediction = new Object({
+          config: dest.config,
+          error: true
+        });
+        predictions[index] = prediction;
+        returned++;
+
+        if (returned == payload.destinations.length) {
+          self.sendSocketNotification('GOOGLE_TRAFFIC_RESPONSE' + payload.instanceId, predictions);
+        };
       });
     });
+	},
+
+	parseDuration: function(duration) {
+		if (typeof duration === 'string') {
+			var match = duration.match(/(\d+)s/);
+			if (match) {
+				return parseInt(match[1]);
+			}
+		} else if (typeof duration === 'object' && duration.seconds) {
+			return parseInt(duration.seconds);
+		}
+		return 0;
 	}
 	
 });
