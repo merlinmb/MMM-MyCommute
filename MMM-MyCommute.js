@@ -223,8 +223,10 @@ Module.register('MMM-MyCommute', {
       mode = modeMap[dest.mode];
     }
 
-    // Use current UTC time for live traffic conditions
-    var departureTime = new Date().toISOString();
+    // Use future time for live traffic conditions (API requires future departure time)
+    var now = new Date();
+    var future = new Date(now.getTime() + 5000);
+    var departureTime = future.toISOString();
 
     var body = {
       origin: { address: this.config.origin },
