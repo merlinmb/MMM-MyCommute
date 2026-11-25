@@ -125,14 +125,33 @@ Module.register('MMM-MyCommute', {
     this.loading = true;
     this.inWindow = true;
     this.isHidden = false;
+    this.pollTimer = null;
 
     //start data poll
     this.getData();
+    this.schedulePoll();
+  },
+
+  schedulePoll: function() {
+    clearInterval(this.pollTimer);
     var self = this;
-    setInterval(function() {
+    this.pollTimer = setInterval(function() {
       self.getData();
     }, this.config.pollFrequency);
-      
+  },
+
+  stop: function() {
+    clearInterval(this.pollTimer);
+    this.pollTimer = null;
+  },
+
+  suspend: function() {
+    this.stop();
+  },
+
+  resume: function() {
+    this.getData();
+    this.schedulePoll();
   },
 
   /*

@@ -13,14 +13,17 @@ module.exports = NodeHelper.create({
 
   start: function() {
     console.log("====================== Starting node_helper for module [" + this.name + "]");
+    this.pendingInstances = new Set();
   },
   
   
   // subclass socketNotificationReceived
   socketNotificationReceived: function(notification, payload){
     if (notification === 'GOOGLE_TRAFFIC_GET') {
-
-      //first data opull after new config
+      if (this.pendingInstances.has(payload.instanceId)) {
+        return;
+      }
+      this.pendingInstances.add(payload.instanceId);
       this.getPredictions(payload);
 
     }
@@ -42,6 +45,7 @@ module.exports = NodeHelper.create({
       console.log("  Routing preference: " + dest.body.routingPreference);
 
 			axios.post('https://routes.googleapis.com/directions/v2:computeRoutes', dest.body, {
+        timeout: 15000,
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': payload.apikey,
@@ -96,6 +100,7 @@ module.exports = NodeHelper.create({
         returned++;
 
         if (returned == payload.destinations.length) {
+          self.pendingInstances.delete(payload.instanceId);
           self.sendSocketNotification('GOOGLE_TRAFFIC_RESPONSE' + payload.instanceId, predictions);
         };
 
@@ -113,6 +118,7 @@ module.exports = NodeHelper.create({
         returned++;
 
         if (returned == payload.destinations.length) {
+          self.pendingInstances.delete(payload.instanceId);
           self.sendSocketNotification('GOOGLE_TRAFFIC_RESPONSE' + payload.instanceId, predictions);
         };
       });
